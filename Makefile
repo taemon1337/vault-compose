@@ -6,7 +6,7 @@ STEP := `docker ps | grep step-cli | cut -d' ' -f1`
 HOST_IP := ${HOST_IP}
 
 cluster:
-	k3d cluster create vaulttest --api-port "${HOST_IP}:6445"
+	k3d cluster create vaulttest --api-port "${HOST_IP}:6445" --image docker.io/rancher/k3s:v1.24.7-k3s1
 
 vault:
 	docker exec -it $(VAULT_SERVER) sh
@@ -52,11 +52,12 @@ dnsutils:
 	docker exec -it $(KUBECTL) kubectl apply -f /vault/config/dnsutils.yaml
 
 demo:
+	sleep 15 # wait for injector to start up
 	docker exec -it $(KUBECTL) kubectl apply -f /vault/config/demo.yaml
 
-build: up certs install secrets policies vaultenv vaultproxy authsetup demo
+build: cluster up certs install secrets policies vaultenv vaultproxy authsetup demo
 
-clean: down clean-data
+clean: down clean-cluster clean-data
 
 clean-cluster:
 	k3d cluster delete vaulttest

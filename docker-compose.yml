@@ -47,6 +47,7 @@ services:
     volumes:
       - ${HOME}/.kube:/.kube:ro
       - ./data/config:/vault/config:rw
+      - ./data/certs:/vault/certs:rw
       - ./data/scripts:/vault/scripts
     user: "${UID}:${GID}"
     environment:

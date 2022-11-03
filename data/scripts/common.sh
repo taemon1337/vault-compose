@@ -7,6 +7,9 @@ DEBUG=${DEBUG:-1}
 DOMAIN=${DOMAIN:-"${AUTH_MOUNT}.local"}
 HELM_VALUES=${CONF_DIR}
 KUBE_HOST=${KUBE_HOST:-""}
+KUBE_HOST_FILE=${KUBE_HOST_FILE:-${CERT_DIR}/kube-host.txt}
+TOKEN_REVIEW_JWT_FILE=${TOKEN_REVIEW_JWT_FILE:-${CERT_DIR}/kube-token.jwt}
+KUBE_CA_CERT_FILE=${KUBE_CA_CERT_FILE:-${CERT_DIR}/kube-ca.crt}
 STAR_CERT_FILE=${STAR_CERT_FILE:-"${CERT_DIR}/star-cert.crt"}
 STAR_CERT_KEY_FILE=${STAR_CERT_KEY_FILE:-"${CERT_DIR}/star-cert.key"}
 STAR_CERT_SAN=${STAR_CERT_SAN:-"*.${DOMAIN}"}
@@ -90,9 +93,9 @@ _vault_auth_enable() {
   if [[ -z "${TOKEN_REVIEW_JWT}" ]]; then _fail "TOKEN_REVIEW_JWT not set."; fi
 
   vault write auth/${AUTH_MOUNT}/config \
-    kubernetes_host="${KUBE_HOST}" \
-    kubernetes_ca_cert="${KUBE_CA_CERT}" \
-    token_reviewer_jwt="${TOKEN_REVIEW_JWT}" \
+    kubernetes_host="@${KUBE_HOST_FILE}" \
+    kubernetes_ca_cert="@${KUBE_CA_CERT_FILE}" \
+    token_reviewer_jwt="@${TOKEN_REVIEW_JWT_FILE}" \
     disable_local_ca_jwt=true
 }
 
@@ -130,8 +133,13 @@ _set_vault_env() {
   local ca=$(kubectl config view -n "${VAULT_NAMESPACE}" --raw --minify --flatten -o jsonpath='{.clusters[].cluster.certificate-authority-data}' | base64 --decode)
   local host=$(kubectl config view --raw --minify --flatten -o jsonpath='{.clusters[].cluster.server}')
 
+  kubectl create token -n "${VAULT_NAMESPACE}" "${VAULT_AUTH_SERVICE_ACCOUNT}" > "${TOKEN_REVIEW_JWT_FILE}"
+  kubectl config view -n "${VAULT_NAMESPACE}" --raw --minify --flatten -o jsonpath='{.clusters[].cluster.certificate-authority-data}' | base64 --decode > "${KUBE_CA_CERT_FILE}"
+  kubectl config view --raw --minify --flatten -o jsonpath='{.clusters[].cluster.server}' > "${KUBE_HOST_FILE}"
+
   echo export TOKEN_REVIEW_JWT=\"${jwt}\" > "${VAULT_ENV}"
-  echo export KUBE_CA_CERT=\"${ca//$'\n'/\\n}\" >> "${VAULT_ENV}"
+  echo export KUBE_CA_CERT=\"${ca}\" >> "${VAULT_ENV}"
+#  echo export KUBE_CA_CERT=\"${ca//$'\n'/\\n}\" >> "${VAULT_ENV}"
   echo export KUBE_HOST="${host}" >> "${VAULT_ENV}"
 }
 
