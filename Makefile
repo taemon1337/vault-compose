@@ -41,13 +41,16 @@ authsetup:
 vaultenv:
 	docker exec -it $(KUBECTL) bash /vault/scripts/fetch-vault-env.sh
 
-vaultsvc:
-	docker exec -it $(KUBECTL) kubectl apply -f /vault/config/vault-svc.yaml
+vaultproxy:
+	docker exec -it $(KUBECTL) kubectl apply -f /vault/config/vault-proxy.yaml
+
+dnsutils:
+	docker exec -it $(KUBECTL) kubectl apply -f /vault/config/dnsutils.yaml
 
 demo:
 	docker exec -it $(KUBECTL) kubectl apply -f /vault/config/demo.yaml
 
-build: certs install secrets policies vaultenv vaultsvc authsetup demo
+build: up certs install secrets policies vaultenv vaultsvc authsetup demo
 
 clean:
 	sudo rm -rf data/certs/* data/file/* data/logs/* data/config/vault.env

@@ -1,0 +1,43 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vault-proxy
+  namespace: vault
+spec:
+  selector:
+    app: vault-proxy
+  ports:
+    - protocol: TCP
+      port: 443
+      targetPort: 8233
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault-proxy
+  namespace: vault
+  labels:
+    app: vault-proxy
+spec:
+  selector:
+    matchLabels:
+      app: vault-proxy
+  template:
+    metadata:
+      labels:
+        app: vault-proxy
+    spec:
+      hostNetwork: true
+      containers:
+      - image: taemon1337/senvoy:latest
+        name: senvoy
+        args:
+          - "--listen-port"
+          - "8233"
+          - "--upstream-port"
+          - "8200"
+          - "--upstream-addr"
+          - "10.113.199.138"
+        ports:
+          - containerPort: 8233
