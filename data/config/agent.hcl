@@ -1,7 +1,7 @@
 auto_auth {
   method {
     type = "kubernetes"
-    mount_path = "auth/k8s-beta"
+    mount_path = "auth/k8s"
 
     config = {
       role = "star-cert-demo-role"

@@ -1,1 +1,3 @@
 data/file/*
+data/config/vault.env
+data/certs/*

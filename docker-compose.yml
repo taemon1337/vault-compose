@@ -7,13 +7,15 @@ services:
       - "8200:8200"
     environment:
       LOG_LEVEL: debug
-      VAULT_ADDR: "http://0.0.0.0:8200"
-      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+      VAULT_ADDR: "http://127.0.0.1:8200"
+      # kubectl config view -o json | jq '.clusters[0].cluster.server'
+      KUBE_HOST: "https://10.113.199.138:6550"
     volumes:
       - ./data/logs:/vault/logs
       - ./data/file:/vault/file
       - ./data/config:/vault/config
       - ./data/scripts:/vault/scripts
+      - ./data/certs:/vault/certs
     cap_add:
       - IPC_LOCK
     command: >
@@ -25,7 +27,43 @@ services:
       VAULT_ADDR: "http://vault:8200"
     volumes:
       - ./data/agent:/vault/agent:rw
+      - ./data/config:/vault/config:ro
     command: >
-      sh -c "vault agent -config=/vault/agent/agent.hcl"
+      sh -c "vault agent -config=/vault/config/agent.hcl"
     depends_on:
       - vault
+  helm:
+    image: alpine/helm:3.10.1
+    volumes:
+      - ${HOME}/.kube:/root/.kube:ro
+      - ./data/config:/vault/config:ro
+      - ./data/scripts:/vault/scripts
+    entrypoint: "/bin/sh"
+    command: 
+      - "-c"
+      - "while true; do sleep 3600; done"
+  kubectl:
+    image: bitnami/kubectl:1.25.3
+    volumes:
+      - ${HOME}/.kube:/.kube:ro
+      - ./data/config:/vault/config:rw
+      - ./data/scripts:/vault/scripts
+    user: "${UID}:${GID}"
+    environment:
+      HOME: /
+      KUBECONFIG: /.kube/config
+    entrypoint: /bin/bash
+    command: 
+      - "-c"
+      - "while true; do sleep 3600; done"
+  step:
+    image: smallstep/step-cli:latest
+    volumes:
+      - ./data/certs:/vault/certs:rw
+      - ./data/scripts:/vault/scripts
+    user: "${UID}:${GID}"
+    entrypoint: /bin/bash
+    command: 
+      - "-c"
+      - "while true; do sleep 3600; done"
+

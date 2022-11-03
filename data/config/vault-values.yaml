@@ -1,0 +1,15 @@
+---
+server:
+  enabled: false
+injector:
+  enabled: true
+  externalVaultAddr: "http://vault.default.svc.cluster.local:8200"
+  authPath: "auth/k8s"
+  logLevel: "debug"
+csi:
+  enabled: true
+  extraArgs:
+    - "-vault-addr=http://vault.default.svc.cluster.local:8200"
+    - "-vault-mount=k8s"
+    - "-vault-tls-server-name=vault"
+    - "-vault-tls-skip-verify=true"
