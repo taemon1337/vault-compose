@@ -9,7 +9,7 @@ services:
       LOG_LEVEL: debug
       VAULT_ADDR: "http://127.0.0.1:8200"
       # kubectl config view -o json | jq '.clusters[0].cluster.server'
-      KUBE_HOST: "https://10.113.199.138:6550"
+      KUBE_HOST: "${KUBE_HOST}"
     volumes:
       - ./data/logs:/vault/logs
       - ./data/file:/vault/file

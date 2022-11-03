@@ -3,6 +3,10 @@ VAULT_AGENT := `docker ps | grep vault | grep agent | cut -d' ' -f1`
 HELM := `docker ps | grep helm | cut -d' ' -f1`
 KUBECTL := `docker ps | grep kubectl | cut -d' ' -f1`
 STEP := `docker ps | grep step-cli | cut -d' ' -f1`
+HOST_IP := ${HOST_IP}
+
+cluster:
+	k3d cluster create vaulttest --api-port "${HOST_IP}:6445"
 
 vault:
 	docker exec -it $(VAULT_SERVER) sh
@@ -42,7 +46,7 @@ vaultenv:
 	docker exec -it $(KUBECTL) bash /vault/scripts/fetch-vault-env.sh
 
 vaultproxy:
-	docker exec -it $(KUBECTL) kubectl apply -f /vault/config/vault-proxy.yaml
+	docker exec -it $(KUBECTL) bash /vault/scripts/vault-proxy.sh "$(HOST_IP)"
 
 dnsutils:
 	docker exec -it $(KUBECTL) kubectl apply -f /vault/config/dnsutils.yaml
@@ -50,11 +54,15 @@ dnsutils:
 demo:
 	docker exec -it $(KUBECTL) kubectl apply -f /vault/config/demo.yaml
 
-build: up certs install secrets policies vaultenv vaultsvc authsetup demo
+build: up certs install secrets policies vaultenv vaultproxy authsetup demo
 
-clean:
+clean: down clean-data
+
+clean-cluster:
+	k3d cluster delete vaulttest
+
+clean-data:
 	sudo rm -rf data/certs/* data/file/* data/logs/* data/config/vault.env
-	docker-compose down
 
 up:
 	docker-compose up -d

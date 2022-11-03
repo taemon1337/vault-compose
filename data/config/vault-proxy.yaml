@@ -38,6 +38,6 @@ spec:
           - "--upstream-port"
           - "8200"
           - "--upstream-addr"
-          - "10.113.199.138"
+          - "VAULT_IP"
         ports:
           - containerPort: 8233
